@@ -45,6 +45,39 @@ The main components of `sports-betting` are dataloaders and bettors objects:
 - Dataloaders download and prepare data suitable for predictive modelling.
 - Bettors provide an easy way to backtest betting strategies and predict the value bets of future events.
 
+## 🚀 Web Application & Déploiement
+
+### 🎯 ValueBet Engine - Interface Streamlit
+
+Une interface web moderne pour la détection de value bets avec visualisation interactive :
+
+```bash
+# Installation
+pip install -r requirements_streamlit.txt
+
+# Lancement local
+streamlit run streamlit_app.py
+```
+
+#### Options de Déploiement pour Clients
+
+| Plateforme | Recommandation | Coût | Avantages |
+|------------|---------------|------|-----------|
+| **Streamlit Cloud** ⭐⭐⭐⭐⭐ | **#1 pour démos clients** | $25/mois | Auth intégré, déploiement 1-click |
+| **Hugging Face Spaces** ⭐⭐⭐⭐ | **#2 gratuit professionnel** | Gratuit/$9/mois | Partage facile, communautaire |
+| **GitHub Spaces** ⭐⭐⭐ | **CI/CD intégré** | Gratuit | Automatisation complète |
+
+#### Déploiement Rapide
+
+```bash
+# Streamlit Cloud (recommandé)
+./deploy_streamlit_cloud.sh
+
+# Ou visitez https://share.streamlit.io/
+```
+
+📖 **[Guide Complet de Déploiement](DEPLOYMENT_GUIDE.md)** - Comparatif détaillé et configurations
+
 ## Quick start
 
 ### API

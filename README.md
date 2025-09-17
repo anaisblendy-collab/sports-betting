@@ -47,28 +47,13 @@ The main components of `sports-betting` are dataloaders and bettors objects:
 
 ## Quick start
 
-### GUI
-
-`sports-betting` comes with a GUI that provides a intuitive way to interact with the library. It supports the following
-functionalitites:
-
-- Easily upload, create, or update dataloaders to handle historical and fixtures data.
-- Develop and test betting models with tools for backtesting and identifying value bets.
-
-To launch the GUI, simply run the command `sportsbet-gui`. Once started, you’ll see the initial screen:
-
-![](screenshots/initial.png)
-![](docs/screenshots/initial.png)
-
-Explore the functionality with guidance from the built-in bot, which streams helpful messages along the way.
-
 ### API
 
 The `sports-betting` package makes it easy to download sports betting data:
 
 ```python
 from sportsbet.datasets import SoccerDataLoader
-dataloader = SoccerDataLoader(param_grid={'league': ['Italy'], 'year': [2020]})
+dataloader = SoccerDataLoader(param_grid={'league': ['France'], 'division': [1], 'year': [2023, 2024]})
 X_train, Y_train, O_train = dataloader.extract_train_data(odds_type='market_maximum')
 X_fix, Y_fix, O_fix = dataloader.extract_fixtures_data()
 ```
@@ -124,11 +109,6 @@ For user installation, `sports-betting` is currently available on the PyPi's rep
 pip install sports-betting
 ```
 
-If you have Node.js version v22.0.0 or higher, you can optionally install the GUI:
-
-```bash
-pip install sports-betting[gui]
-```
 
 Development installation requires to clone the repository and then use [PDM](https://github.com/pdm-project/pdm) to install the
 project as well as the main and development dependencies:
@@ -141,31 +121,9 @@ pdm install
 
 ## Usage
 
-You can access `sports-betting` through the GUI application, the Python API, or the CLI. However, it’s a good idea to
-get familiar with the Python API since you’ll need it to create configuration files for the CLI or load custom betting
-models into the GUI. `sports-betting` supports all common sports betting needs i.e. fetching historical and fixtures
-data as well as backtesting of betting strategies and prediction of value bets. 
+You can access `sports-betting` through the Python API or the CLI. `sports-betting` supports all common sports betting needs i.e. fetching historical and fixtures
+data as well as backtesting of betting strategies and prediction of value bets.
 
-## GUI
-
-Launch the GUI app with the command `sportsbet-gui`.
-
-Here are a few things you can do with the GUI:
-
-- Configure the dataloader:
-
-![](screenshots/parameters.png)
-![](docs/screenshots/parameters.png)
-
-- Create a new betting model:
-
-![](screenshots/betting_model.png)
-![](docs/screenshots/betting_model.png)
-
-- Run the model to get either backtesting results or value bets:
-
-![](screenshots/backtesting.png)
-![](docs/screenshots/backtesting.png)
 
 ### API
 
@@ -173,7 +131,7 @@ Assume we would like to backtest the following scenario and use the bettor objec
 to predict value bets:
 
 - Selection of data
-  - First and second division of German, Italian and French leagues for the years 2021-2024
+  - Ligue 1 (division 1) of French league for the years 2023-2024
   - Maximum odds of the market in order to backtest our betting strategy
 - Configuration of betting strategy
   - 5-fold time ordered cross-validation
@@ -186,9 +144,9 @@ to predict value bets:
 # Selection of data
 from sportsbet.datasets import SoccerDataLoader
 
-leagues = ['Germany', 'Italy', 'France']
-divisions = [1, 2]
-years = [2021, 2022, 2023, 2024]
+leagues = ['France']
+divisions = [1]
+years = [2023, 2024]
 odds_type = 'market_maximum'
 dataloader = SoccerDataLoader({'league': leagues, 'year': years, 'division': divisions})
 X_train, Y_train, O_train = dataloader.extract_train_data(odds_type=odds_type)

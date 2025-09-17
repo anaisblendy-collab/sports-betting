@@ -4,7 +4,7 @@ from sportsbet.datasets import SoccerDataLoader
 
 DATALOADER_CLASS = SoccerDataLoader
 PARAM_GRID = {
-    'league': ['England', 'Italy', 'Greece'],
-    'year': [2023],
+    'league': ['Champions League'],
+    'year': [2023, 2024, 2025],  # Mets toutes les années souhaitées
 }
 ODDS_TYPE = 'market_maximum'

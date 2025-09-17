@@ -49,21 +49,20 @@ Funding = "https://github.com/sponsors/georgedouzas"
 
 [project.scripts]
 sportsbet = "sportsbet.cli:main"
-sportsbet-gui = "sportsbet.gui.main:run"
 
 [project.optional-dependencies]
-gui = [
-    "nest-asyncio>=1.6.0",
-    "reflex==0.7.0",
-    "reflex-ag-grid>=0.0.10",
+visualization = [
+    "matplotlib>=3.5.0",
+    "seaborn>=0.11.0",
 ]
+
 [tool.pdm]
 version = {source = "scm"}
 build = {package-dir = "src", editable-backend = "editables"}
 
 [tool.pdm.scripts]
 clean = {shell = """rm -rf .mypy_cache .pytest_cache tests/.pytest_cache build dist \
-htmlcov pip-wheel-metadata site __pycache__ docs/generated .nox .ruff_cache pdm.lock src/sportsbet/gui/.web src/sportsbet/gui/.states  \
+htmlcov pip-wheel-metadata site __pycache__ docs/generated .nox .ruff_cache pdm.lock \
 && find . -type d -name __pycache__ | xargs rm -rf \
 && find . -name '*.rej'  -delete \
 && find . -name '.coverage*'  -delete"""}
@@ -158,7 +157,7 @@ warn_unused_ignores = true
 show_error_codes = true
 
 [tool.pytest.ini_options]
-addopts = ["--cov", "--doctest-modules", "--dist=loadgroup", "-n=auto", "--ignore=src/sportsbet/gui"]
+addopts = ["--cov", "--doctest-modules", "--dist=loadgroup", "-n=auto"]
 testpaths = ["src", "tests"]
 
 [tool.coverage.run]

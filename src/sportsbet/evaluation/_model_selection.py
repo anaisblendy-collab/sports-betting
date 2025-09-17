@@ -162,6 +162,165 @@ def backtest(
     return results
 
 
+def value_bet_backtest(
+    bettor: BaseBettor,
+    X: pd.DataFrame,
+    Y: pd.DataFrame,
+    O: pd.DataFrame,
+    kelly_fraction: float = 1.0,
+) -> dict:
+    """Backtest the bettor with sequential Kelly criterion simulation.
+
+    This function simulates the betting process sequentially, updating the bankroll
+    after each bet and applying the Kelly criterion for stake sizing.
+
+    Args:
+        bettor: The bettor object.
+        X: The input data.
+        Y: The multi-output targets.
+        O: The odds data.
+        kelly_fraction: Fraction of Kelly stake to use (1.0 = full Kelly).
+
+    Returns:
+        dict: Results including bankroll history, performance metrics, and Kelly stakes.
+    """
+    # Check data
+    check_consistent_length(X, Y, O)
+    if not isinstance(X, pd.DataFrame) or not isinstance(X.index, pd.DatetimeIndex):
+        error_msg = 'Input data `X` should be pandas dataframe with a date index.'
+        raise TypeError(error_msg)
+    if not isinstance(Y, pd.DataFrame):
+        error_msg = 'Output data `Y` should be pandas dataframe.'
+        raise TypeError(error_msg)
+    if not isinstance(O, pd.DataFrame):
+        error_msg = 'Odds data `O` should be pandas dataframe.'
+        raise TypeError(error_msg)
+
+    # Sort data by date
+    indices = np.argsort(X.index)
+    X, Y, O = X.iloc[indices], Y.iloc[indices], O.iloc[indices]
+
+    # Initialize tracking variables with bettor's initial cash
+    initial_bankroll = getattr(bettor, 'init_cash', 10000.0)  # Default to 10000 if not set
+    bankroll = initial_bankroll
+    bankroll_history = [bankroll]
+
+    # Risk management parameters
+    max_drawdown_pct = 0.30  # Stop if we lose 30% of initial capital
+    peak_bankroll = initial_bankroll
+
+    # Fit bettor on all data
+    bettor.fit(X, Y, O)
+    bet_dates = []
+    stakes = []
+    returns = []
+    outcomes = []
+
+    # Process each match sequentially
+    for idx in range(len(X)):
+        current_X = X.iloc[[idx]]
+        current_Y = Y.iloc[[idx]]
+        current_O = O.iloc[[idx]]
+
+        # Get predictions and odds
+        proba = bettor.predict_proba(current_X)
+        bets = bettor.bet(current_X, current_O)
+
+        # Process each betting market
+        for market_idx, market in enumerate(bettor.betting_markets_):
+            if bets[0, market_idx]:  # If we have a bet for this market
+                # Get odds for this market
+                odds_col = [col for col in current_O.columns
+                           if '__'.join(col.split('__')[2:]) == market][0]
+                odds = current_O.iloc[0][odds_col]
+
+                # Calculate Kelly stake
+                prob = proba[0, market_idx]
+                kelly_stake = (prob * (odds - 1) - (1 - prob)) / (odds - 1) if odds > 1 else 0
+                kelly_stake = max(0, kelly_stake) * kelly_fraction
+
+                # Limit stake to available bankroll with realistic constraints
+                max_stake_pct = 0.02  # Maximum 2% of bankroll
+                max_stake_abs = 500.0  # Maximum 500€ absolute
+                stake = min(
+                    kelly_stake * bankroll,
+                    bankroll * max_stake_pct,
+                    max_stake_abs
+                )
+
+                if stake > 0:
+                    # Check outcome
+                    outcome_col = [col for col in current_Y.columns
+                                 if '__'.join(col.split('__')[1:]) == market][0]
+                    outcome = current_Y.iloc[0][outcome_col]
+
+                    # Calculate return
+                    if outcome == 1:  # Win
+                        bet_return = stake * (odds - 1)
+                        bankroll += bet_return
+                        result = 'win'
+                    else:  # Loss
+                        bankroll -= stake
+                        bet_return = -stake
+                        result = 'loss'
+
+                    # Update peak bankroll for drawdown calculation
+                    peak_bankroll = max(peak_bankroll, bankroll)
+
+                    # Check drawdown limit
+                    current_drawdown = (peak_bankroll - bankroll) / peak_bankroll
+                    if current_drawdown > max_drawdown_pct:
+                        print(f"⚠️  Stop loss activé: Drawdown de {current_drawdown:.1%} > {max_drawdown_pct:.1%}")
+                        break  # Stop trading if drawdown is too high
+
+                    # Record data
+                    bet_dates.append(current_X.index[0])
+                    stakes.append(stake)
+                    returns.append(bet_return)
+                    outcomes.append(result)
+                    bankroll_history.append(bankroll)
+
+    # Calculate performance metrics
+    total_return = bankroll - initial_bankroll
+    total_return_pct = (total_return / initial_bankroll) * 100 if initial_bankroll > 0 else 0
+    win_rate = sum(1 for r in outcomes if r == 'win') / len(outcomes) if outcomes else 0
+    avg_win = sum(r for r in returns if r > 0) / sum(1 for r in returns if r > 0) if any(r > 0 for r in returns) else 0
+    avg_loss = sum(r for r in returns if r < 0) / sum(1 for r in returns if r < 0) if any(r < 0 for r in returns) else 0
+
+    # Sharpe ratio and drawdown calculation
+    if returns:
+        daily_returns = pd.Series(returns, index=bet_dates).groupby(pd.Grouper(freq='D')).sum()
+        daily_returns = daily_returns.reindex(pd.date_range(daily_returns.index.min(), daily_returns.index.max()), fill_value=0)
+        sharpe_ratio = np.sqrt(365) * daily_returns.mean() / daily_returns.std() if daily_returns.std() > 0 else 0
+
+        # Calculate maximum drawdown
+        cumulative = (1 + daily_returns).cumprod()
+        peak = cumulative.expanding().max()
+        drawdown_series = (cumulative - peak) / peak
+        max_drawdown = drawdown_series.min()
+    else:
+        sharpe_ratio = 0
+        max_drawdown = 0
+
+    return {
+        'bankroll_history': bankroll_history,
+        'bet_dates': bet_dates,
+        'stakes': stakes,
+        'returns': returns,
+        'outcomes': outcomes,
+        'final_bankroll': bankroll,
+        'total_return': total_return,
+        'total_return_pct': total_return_pct,
+        'win_rate': win_rate,
+        'avg_win': avg_win,
+        'avg_loss': avg_loss,
+        'sharpe_ratio': sharpe_ratio,
+        'max_drawdown': max_drawdown,
+        'total_bets': len(outcomes),
+        'kelly_fraction': kelly_fraction,
+    }
+
+
 class BettorGridSearchCV(GridSearchCV, BaseBettor):
     """Exhaustive search over specified parameter values for a bettor.
 

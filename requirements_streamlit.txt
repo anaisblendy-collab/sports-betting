@@ -1,0 +1,27 @@
+# Requirements pour l'application Streamlit ValueBet Engine
+
+# Interface web
+streamlit>=1.28.0
+
+# Data Science & ML
+pandas>=2.0.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+
+# Visualisations
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.15.0
+
+# APIs et HTTP
+aiohttp>=3.8.0
+requests>=2.31.0
+
+# Outils système
+python-dotenv>=1.0.0
+
+# Dépendances du projet sportsbet
+# (à adapter selon votre setup)
+# - sportsbet (projet local)
+# - joblib (pour la sérialisation des modèles)
+# - cloudpickle (pour la sérialisation avancée)
